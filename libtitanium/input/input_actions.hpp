@@ -3,8 +3,6 @@
 #include <libtitanium/util/numerics.hpp>
 #include <libtitanium/util/data/span.hpp>
 
-#include <SDL.h>
-
 namespace input
 {
     /*

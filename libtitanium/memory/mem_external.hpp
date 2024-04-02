@@ -25,8 +25,10 @@
 
     namespace memory
     {
+#if TITANIUM_SDL
         // TODO: should probably ifdef this stuff out when not using sdl? but at the moment we always use sdl
         void SetExternMemoryFunctions_SDL();
+#endif // #if TITANIUM_SDL
     }
 
 #endif // #if HAS_CUSTOM_EXTERN_ALLOCS

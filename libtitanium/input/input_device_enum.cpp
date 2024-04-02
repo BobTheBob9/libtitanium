@@ -1,11 +1,13 @@
 #include "input_device.hpp"
 
-#include <SDL_mouse.h>
-#include <SDL_scancode.h>
 #include <libtitanium/util/static_array.hpp>
 #include <libtitanium/util/string.hpp>
 
-#include <SDL_gamecontroller.h>
+#if TITANIUM_SDL
+    #include <SDL_mouse.h>
+    #include <SDL_scancode.h>
+    #include <SDL_gamecontroller.h>
+#endif // #if TITANIUM_SDL
 
 namespace input
 {
@@ -41,7 +43,6 @@ namespace input
 
         return szEKeyboardMouseAxisToString[ static_cast<int>( eAxis ) ];
     }
-
 
     const char *const szEKeyboardAndMouseButtonToString[] {
         "none", // EKeyboardMouseButton::NONE
@@ -148,6 +149,115 @@ namespace input
     };
     static_assert( util::StaticArray_Length( szEKeyboardAndMouseButtonToString ) == static_cast<int>( EKeyboardMouseButton::_COUNT ) );
 
+    EKeyboardMouseButton EKeyboardMouseButton_FromString( const char *const pszAxis )
+    {
+        for ( uint i = 0; i < util::StaticArray_Length( szEKeyboardAndMouseButtonToString ); i++ )
+        {
+            if ( util::string::CStringsEqual( pszAxis, szEKeyboardAndMouseButtonToString[ i ] ) )
+            {
+                return static_cast<EKeyboardMouseButton>( i );
+            }
+        }
+
+        return EKeyboardMouseButton::NONE;
+    }
+
+    const char * EKeyboardMouseButton_ToString( const EKeyboardMouseButton eButton )
+    {
+        if ( eButton >= EKeyboardMouseButton::_COUNT )
+        {
+            return szEKeyboardAndMouseButtonToString[ static_cast<int>( EKeyboardMouseButton::NONE ) ];
+        }
+
+        return szEKeyboardAndMouseButtonToString[ static_cast<int>( eButton ) ];
+    }
+
+    bool EKeyboardMouseButton_IsMouseInput( const EKeyboardMouseButton eButton )
+    {
+        return eButton < EKeyboardMouseButton::_MOUSE_MAX;
+    }
+
+    const char *const szEControllerAxisToString[] {
+        "none", // EControllerAxis::NONE
+
+        "leftstick_x", // EControllerAxis::LEFTSTICK_X
+        "leftstick_y", // EControllerAxis::LEFTSTICK_Y
+        "rightstick_x", // EControllerAxis::RIGHTSTICK_X
+        "rightstick_y", // EControllerAxis::RIGHTSTICK_Y
+        "trigger_left", // EControllerAxis::TRIGGER_LEFT
+        "trigger_right" // EControllerAxis::TRIGGER_RIGHT
+    };
+    static_assert( util::StaticArray_Length( szEControllerAxisToString ) == static_cast<int>( EControllerAxis::_COUNT ) );
+
+    EControllerAxis EControllerAxisFromString( const char *const pszAxis )
+    {
+        for ( uint i = 0; i < util::StaticArray_Length( szEControllerAxisToString ); i++ )
+        {
+            if ( util::string::CStringsEqual( pszAxis, szEControllerAxisToString[ i ] ) )
+            {
+                return static_cast<EControllerAxis>( i );
+            }
+        }
+
+        return EControllerAxis::NONE;
+    }
+
+    const char * EControllerAxisToString( const EControllerAxis eAxis )
+    {
+        if ( eAxis >= EControllerAxis::_COUNT )
+        {
+            return szEControllerAxisToString[ static_cast<int>( EControllerAxis::NONE ) ];
+        }
+
+        return szEControllerAxisToString[ static_cast<int>( eAxis ) ];
+    }
+
+    const char *const szEControllerButtonToString[] {
+        "none", // EControllerButton::NONE,
+
+        "a", // EControllerButton::A
+        "b", // EControllerButton::B
+        "x", // EControllerButton::X
+        "y", // EControllerButton::Y
+        "start", // EControllerButton::START
+        "select", // EControllerButton::SELECT
+        "guide", // EControllerButton::GUIDE
+        "leftstick_in", // EControllerButton::LEFSTICK_IN
+        "rightstick_in", // EControllerButton::RIGHTSTICK_IN
+        "leftbumper", // EControllerButton::LEFTBUMPER
+        "rightbumper", // EControllerButton::RIGHTBUMPER
+        "dpad_up", // EControllerButton::DPAD_UP
+        "dpad_down", // EControllerButton::DPAD_DOWN
+        "dpad_left", // EControllerButton::DPAD_LEFT
+        "dpad_right" // EControllerButton::DPAD_RIGHT
+    };
+    static_assert( util::StaticArray_Length( szEControllerButtonToString ) == static_cast<int>( EControllerButton::_COUNT ) );
+
+    EControllerButton EControllerButtonFromString( const char *const pszButton )
+    {
+        for ( uint i = 0; i < util::StaticArray_Length( szEControllerButtonToString ); i++ )
+        {
+            if ( util::string::CStringsEqual( pszButton, szEControllerButtonToString[ i ] ) )
+            {
+                return static_cast<EControllerButton>( i );
+            }
+        }
+
+        return EControllerButton::NONE;
+    }
+
+    const char * EControllerButtonToString( const EControllerButton eButton )
+    {
+        if ( eButton >= EControllerButton::_COUNT )
+        {
+            return szEControllerButtonToString[ static_cast<int>( EControllerButton::NONE ) ];
+        }
+
+        return szEControllerButtonToString[ static_cast<int>( eButton ) ];
+    }
+
+
+#if TITANIUM_SDL
     int sdlEMouseButtonToSDLBitmask[] {
         0, // EKeyboardAndMouseButton::NONE
 
@@ -157,7 +267,6 @@ namespace input
         SDL_BUTTON_X1MASK, // EKeyboardAndMouseButton::MOUSE_EX1
         SDL_BUTTON_X2MASK  // EKeyboardAndMouseButton::MOUSE_EX2
     };
-
     static_assert( util::StaticArray_Length( sdlEMouseButtonToSDLBitmask ) == static_cast<int>( EKeyboardMouseButton::_MOUSE_MAX ) );
 
     SDL_Scancode sdlEKeyboardButtonToSDL[] {
@@ -265,34 +374,6 @@ namespace input
     };
     static_assert( util::StaticArray_Length( sdlEKeyboardButtonToSDL ) == static_cast<int>( EKeyboardMouseButton::_COUNT ) );
 
-    EKeyboardMouseButton EKeyboardMouseButton_FromString( const char *const pszAxis )
-    {
-        for ( uint i = 0; i < util::StaticArray_Length( szEKeyboardAndMouseButtonToString ); i++ )
-        {
-            if ( util::string::CStringsEqual( pszAxis, szEKeyboardAndMouseButtonToString[ i ] ) )
-            {
-                return static_cast<EKeyboardMouseButton>( i );
-            }
-        }
-
-        return EKeyboardMouseButton::NONE;
-    }
-
-    const char * EKeyboardMouseButton_ToString( const EKeyboardMouseButton eButton )
-    {
-        if ( eButton >= EKeyboardMouseButton::_COUNT )
-        {
-            return szEKeyboardAndMouseButtonToString[ static_cast<int>( EKeyboardMouseButton::NONE ) ];
-        }
-
-        return szEKeyboardAndMouseButtonToString[ static_cast<int>( eButton ) ];
-    }
-
-    bool EKeyboardMouseButton_IsMouseInput( const EKeyboardMouseButton eButton )
-    {
-        return eButton < EKeyboardMouseButton::_MOUSE_MAX;
-    }
-
     SDL_Scancode EKeyboardMouseButton_ToSDLKeyboardScancode( const EKeyboardMouseButton eButton )
     {
         if ( eButton >= EKeyboardMouseButton::_COUNT )
@@ -313,42 +394,6 @@ namespace input
         return sdlEMouseButtonToSDLBitmask[ static_cast<int>( eButton ) ];
     }
 
-
-    const char *const szEControllerAxisToString[] {
-        "none", // EControllerAxis::NONE
-
-        "leftstick_x", // EControllerAxis::LEFTSTICK_X
-        "leftstick_y", // EControllerAxis::LEFTSTICK_Y
-        "rightstick_x", // EControllerAxis::RIGHTSTICK_X
-        "rightstick_y", // EControllerAxis::RIGHTSTICK_Y
-        "trigger_left", // EControllerAxis::TRIGGER_LEFT
-        "trigger_right" // EControllerAxis::TRIGGER_RIGHT
-    };
-    static_assert( util::StaticArray_Length( szEControllerAxisToString ) == static_cast<int>( EControllerAxis::_COUNT ) );
-
-    EControllerAxis EControllerAxisFromString( const char *const pszAxis )
-    {
-        for ( uint i = 0; i < util::StaticArray_Length( szEControllerAxisToString ); i++ )
-        {
-            if ( util::string::CStringsEqual( pszAxis, szEControllerAxisToString[ i ] ) )
-            {
-                return static_cast<EControllerAxis>( i );
-            }
-        }
-
-        return EControllerAxis::NONE;
-    }
-
-    const char * EControllerAxisToString( const EControllerAxis eAxis )
-    {
-        if ( eAxis >= EControllerAxis::_COUNT )
-        {
-            return szEControllerAxisToString[ static_cast<int>( EControllerAxis::NONE ) ];
-        }
-
-        return szEControllerAxisToString[ static_cast<int>( eAxis ) ];
-    }
-
     SDL_GameControllerAxis sdlEControllerAxisToSDLAxis[] {
         SDL_CONTROLLER_AXIS_INVALID,
 
@@ -363,51 +408,6 @@ namespace input
     SDL_GameControllerAxis EControllerAxisToSDLAxis( const EControllerAxis eControllerAxis )
     {
         return sdlEControllerAxisToSDLAxis[ static_cast<int>( eControllerAxis ) ];
-    }
-
-    const char *const szEControllerButtonToString[] {
-        "none", // EControllerButton::NONE,
-
-        "a", // EControllerButton::A
-        "b", // EControllerButton::B
-        "x", // EControllerButton::X
-        "y", // EControllerButton::Y
-        "start", // EControllerButton::START
-        "select", // EControllerButton::SELECT
-        "guide", // EControllerButton::GUIDE
-        "leftstick_in", // EControllerButton::LEFSTICK_IN
-        "rightstick_in", // EControllerButton::RIGHTSTICK_IN
-        "leftbumper", // EControllerButton::LEFTBUMPER
-        "rightbumper", // EControllerButton::RIGHTBUMPER
-        "dpad_up", // EControllerButton::DPAD_UP
-        "dpad_down", // EControllerButton::DPAD_DOWN
-        "dpad_left", // EControllerButton::DPAD_LEFT
-        "dpad_right" // EControllerButton::DPAD_RIGHT
-    };
-
-    static_assert( util::StaticArray_Length( szEControllerButtonToString ) == static_cast<int>( EControllerButton::_COUNT ) );
-
-    EControllerButton EControllerButtonFromString( const char *const pszButton )
-    {
-        for ( uint i = 0; i < util::StaticArray_Length( szEControllerButtonToString ); i++ )
-        {
-            if ( util::string::CStringsEqual( pszButton, szEControllerButtonToString[ i ] ) )
-            {
-                return static_cast<EControllerButton>( i );
-            }
-        }
-
-        return EControllerButton::NONE;
-    }
-
-    const char * EControllerButtonToString( const EControllerButton eButton )
-    {
-        if ( eButton >= EControllerButton::_COUNT )
-        {
-            return szEControllerButtonToString[ static_cast<int>( EControllerButton::NONE ) ];
-        }
-
-        return szEControllerButtonToString[ static_cast<int>( eButton ) ];
     }
 
     SDL_GameControllerButton sdlEControllerButtonToSDLButton[] {
@@ -429,12 +429,11 @@ namespace input
         SDL_CONTROLLER_BUTTON_DPAD_LEFT,
         SDL_CONTROLLER_BUTTON_DPAD_RIGHT
     };
-
     static_assert( util::StaticArray_Length( sdlEControllerButtonToSDLButton ) == static_cast<int>( EControllerButton::_COUNT ) );
 
     SDL_GameControllerButton EControllerButtonToSDLButton( const EControllerButton eControllerButton )
     {
         return sdlEControllerButtonToSDLButton[ static_cast<int>( eControllerButton ) ];
     }
-
+#endif // #if TITANIUM_SDL
 }

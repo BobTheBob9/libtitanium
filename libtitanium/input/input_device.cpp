@@ -6,11 +6,14 @@
 #include <libtitanium/util/maths.hpp>
 #include <libtitanium/logger/logger.hpp>
 
-#include <SDL.h>
-#include <SDL_mouse.h>
-#include <SDL_events.h>
-#include <SDL_keyboard.h>
-#include <SDL_gamecontroller.h>
+// TODO: i'm wrapping this in TITANIUM_SDL, but honestly with how heavily this is tied to sdl stuff it might be better just to make a new file for it
+#if TITANIUM_SDL
+    #include <SDL.h>
+    #include <SDL_mouse.h>
+    #include <SDL_events.h>
+    #include <SDL_keyboard.h>
+    #include <SDL_gamecontroller.h>
+#endif // #if TITANIUM_SDL
 
 namespace input
 {
@@ -32,6 +35,7 @@ namespace input
     // default value taken from winquake's joy_pitchsensitivity var
     f32 s_flJoystickScale = 1.f; config::Var * pcvarJoystickScale = config::RegisterVar( "input::joystickscale", config::EFVarUsageFlags::NONE, config::VARF_FLOAT, &s_flJoystickScale );
 
+#if TITANIUM_SDL
     void SetupSDL()
     {
         SDL_SetRelativeMouseMode( SDL_TRUE );
@@ -343,4 +347,5 @@ namespace input
             }
         }
     }
+#endif // #if TITANIUM_SDL
 }

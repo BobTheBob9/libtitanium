@@ -3,8 +3,6 @@
 #include <libtitanium/util/maths.hpp>
 
 #include <webgpu/webgpu.h>
-#include <imgui.h>
-#include <imgui_impl_wgpu.h>
 
 #if TITANIUM_SDL
     #include <SDL_syswm.h>
@@ -46,9 +44,9 @@ namespace renderer
 
     // platform-specific code... here be dragons...
 #if TITANIUM_SDL
-    void ConfigureWindowWGPUSurface( WGPUSurface wgpuWindowSurface, Device *const pRenderDevice, const util::maths::Vec2<uint> resolution )
+    void ConfigureWindowWGPUSurface( DrawTarget *const pDrawTarget, Device *const pRenderDevice, const util::maths::Vec2<uint> resolution )
     {
-        WGPUSurfaceCapabilities wgpuWindowSurfaceCaps; wgpuSurfaceGetCapabilities( wgpuWindowSurface, pRenderDevice->internal.wgpuGraphicsDevice, &wgpuWindowSurfaceCaps );
+        WGPUSurfaceCapabilities wgpuWindowSurfaceCaps; wgpuSurfaceGetCapabilities( pDrawTarget->internal.wgpuTargetSurface, pRenderDevice->internal.wgpuGraphicsDevice, &wgpuWindowSurfaceCaps );
 
         // determine the right optimal present mode n stuff
         const WGPUPresentMode wgpuIdealPresentMode = WGPUPresentMode_Immediate; // TODO: make configurable by caller
@@ -62,11 +60,11 @@ namespace renderer
             }
         }
 
-        const WGPUTextureFormat wgpuSurfaceFormat = wgpuSurfaceGetPreferredFormat( wgpuWindowSurface, pRenderDevice->internal.wgpuGraphicsDevice );
+        pDrawTarget->internal.wgpuTargetSurfaceTextureFormat = wgpuSurfaceGetPreferredFormat( pDrawTarget->internal.wgpuTargetSurface, pRenderDevice->internal.wgpuGraphicsDevice );
         const WGPUSurfaceConfiguration wgpuConfigureSurfaceParams = {
             .device = pRenderDevice->internal.wgpuVirtualDevice,
 
-            .format = wgpuSurfaceFormat,
+            .format = pDrawTarget->internal.wgpuTargetSurfaceTextureFormat,
             .usage = WGPUTextureUsage_RenderAttachment,
 
             .width = resolution.x,
@@ -74,7 +72,7 @@ namespace renderer
 
             .presentMode = wgpuBestPresentMode
         };
-        wgpuSurfaceConfigure( wgpuWindowSurface, &wgpuConfigureSurfaceParams );
+        wgpuSurfaceConfigure( pDrawTarget->internal.wgpuTargetSurface, &wgpuConfigureSurfaceParams );
     }
 
     DrawTarget DrawTarget::CreateFromSysWindow_SDL( Device *const pRenderDevice, SDL_Window *const psdlWindow )
@@ -115,18 +113,14 @@ namespace renderer
         #error "Renderer - DrawTarget::CreateFromSysWindow_SDL doesn't support the platform it's being compiled for :c"
     #endif // #else // #ifdef linux
 
-        WGPUSurface wgpuWindowSurface = wgpuInstanceCreateSurface( pRenderDevice->internal.wgpuInstance, &wgpuCreateSurfaceDescriptor );
+        r_drawTarget.internal.wgpuTargetSurface = wgpuInstanceCreateSurface( pRenderDevice->internal.wgpuInstance, &wgpuCreateSurfaceDescriptor );
+
         // LogWGPUWindowSurface( wgpuWindowSurface, Device *const pRenderDevice )
 
         int windowWidth, windowHeight;
         SDL_GetWindowSize( psdlWindow, &windowWidth, &windowHeight );
-        ConfigureWindowWGPUSurface( wgpuWindowSurface, pRenderDevice, { .x = static_cast<uint>( windowWidth ), .y = static_cast<uint>( windowHeight ) } );
+        ConfigureWindowWGPUSurface( &r_drawTarget, pRenderDevice, { .x = static_cast<uint>( windowWidth ), .y = static_cast<uint>( windowHeight ) } );
         CreateDrawTargetDepthTextureForResolution( &r_drawTarget, pRenderDevice, { .x = static_cast<uint>( windowWidth ), .y = static_cast<uint>( windowHeight ) } );
-
-        // TODO: TEMP!!! this shouldn't really be in renderer code
-        ImGui_ImplWGPU_Init( pRenderDevice->internal.wgpuVirtualDevice, 1, wgpuSurfaceGetPreferredFormat( wgpuWindowSurface, pRenderDevice->internal.wgpuGraphicsDevice ), DEPTH_TEXTURE_FORMAT );
-
-        r_drawTarget.internal.wgpuTargetSurface = wgpuWindowSurface;
 
         return r_drawTarget;
     }
@@ -137,7 +131,7 @@ namespace renderer
 
         int windowWidth, windowHeight;
         SDL_GetWindowSize( psdlWindow, &windowWidth, &windowHeight );
-        ConfigureWindowWGPUSurface( pDrawTarget->internal.wgpuTargetSurface, pRenderDevice, { .x = static_cast<uint>( windowWidth ), .y = static_cast<uint>( windowHeight ) } );
+        ConfigureWindowWGPUSurface( pDrawTarget, pRenderDevice, { .x = static_cast<uint>( windowWidth ), .y = static_cast<uint>( windowHeight ) } );
         CreateDrawTargetDepthTextureForResolution( pDrawTarget, pRenderDevice, { .x = static_cast<uint>( windowWidth ), .y = static_cast<uint>( windowHeight ) } );
     }
 #endif // #if TITANIUM_SDL

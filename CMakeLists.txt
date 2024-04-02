@@ -5,6 +5,7 @@ set( CMAKE_CXX_STANDARD 20 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 
 # TODO: need to respect TITANIUM_SDL=0 in this, atm we assume sdl when we possibly shouldn't
+# also TODO: some of these modules suck and should die! i.e. libtitanium_sys, libtitanium_imguiwidgets
 
 add_library( libtitanium_util STATIC )
 target_include_directories( libtitanium_util PUBLIC
@@ -88,28 +89,15 @@ target_sources( libtitanium_renderer PRIVATE
     ${PROJECT_SOURCE_DIR}/libtitanium/renderer/renderer_main.cpp
     ${PROJECT_SOURCE_DIR}/libtitanium/renderer/renderer_device.cpp
     ${PROJECT_SOURCE_DIR}/libtitanium/renderer/renderer_target.cpp
+    ${PROJECT_SOURCE_DIR}/libtitanium/renderer/renderer_command.cpp
     ${PROJECT_SOURCE_DIR}/libtitanium/renderer/renderer_stringify.cpp
+    ${PROJECT_SOURCE_DIR}/libtitanium/renderer/renderer_helpers.cpp
 )
 target_link_libraries( libtitanium_renderer PRIVATE libtitanium_util libtitanium_config libtitanium_logger
     ${PROJECT_SOURCE_DIR}/libtitanium/renderer/extern/webgpu/libwgpu_native.a
-    imgui
     ${SDL2_LIBRARIES}
 )
 target_compile_options( libtitanium_renderer PRIVATE ${TITANIUM_COMPILER_ARGS} )
-
-
-# todo: this sucks kill this
-add_library( libtitanium_imguiwidgets INTERFACE )
-target_include_directories( libtitanium_imguiwidgets INTERFACE
-    ${PROJECT_SOURCE_DIR}
-)
-target_sources( libtitanium_imguiwidgets INTERFACE
-    ${PROJECT_SOURCE_DIR}/libtitanium/imgui_widgets/console.cpp
-    ${PROJECT_SOURCE_DIR}/libtitanium/imgui_widgets/resourceprofiler.cpp
-    ${PROJECT_SOURCE_DIR}/libtitanium/imgui_widgets/debugoverlay.cpp
-)
-target_link_libraries( libtitanium_imguiwidgets INTERFACE imgui libtitanium_util libtitanium_config )
-target_compile_options( libtitanium_imguiwidgets INTERFACE ${TITANIUM_COMPILER_ARGS} )
 
 
 add_library( libtitanium_input STATIC )
@@ -124,3 +112,22 @@ target_sources( libtitanium_input PRIVATE
 )
 target_link_libraries( libtitanium_input PRIVATE ${SDL2_LIBRARIES} )
 target_compile_options( libtitanium_input PRIVATE ${TITANIUM_COMPILER_ARGS} )
+
+
+add_library( libtitanium_resource STATIC )
+target_include_directories( libtitanium_resource PUBLIC
+    ${PROJECT_SOURCE_DIR}
+)
+target_sources( libtitanium_resource PRIVATE
+    ${PROJECT_SOURCE_DIR}/libtitanium/resource/resource_resolve.cpp
+    ${PROJECT_SOURCE_DIR}/libtitanium/resource/readbuf.cpp
+    ${PROJECT_SOURCE_DIR}/libtitanium/resource/readbuf_source_file.cpp
+)
+
+#add_library( libtitanium_gui STATIC )
+#target_include_directories( libtitanium_sys PUBLIC ${PROJECT_SOURCE_DIR} )
+#target_sources( libtitanium_gui PRIVATE
+#     ${PROJECT_SOURCE_DIR}/libtitanium/gui/gui_layout.cpp
+#)
+#target_link_libraries( libtitanium_gui PRIVATE libtitaniun_renderer libtitanium_input )
+#target_compile_options( libtitanium_gui INTERFACE ${TITANIUM_COMPILER_ARGS} )

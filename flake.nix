@@ -2,12 +2,14 @@
     description = "The titanium game engine and general development library";
 
     inputs = {
-        nixpkgs.url = "github:NixOS/nixpkgs/23.05";
-        futils.url = "github:numtide/flake-utils";
+        nixpkgs.url = "github:NixOS/nixpkgs/23.11";
+        flake-utils.url = "github:numtide/flake-utils";
     };
 
-    outputs = { self, nixpkgs, futils }:
-        futils.lib.eachDefaultSystem( system: let pkgs = import nixpkgs { inherit system; };
+    # TODO: check for TITANIUM_SDL here?
+
+    outputs = { self, nixpkgs, flake-utils }:
+        flake-utils.lib.eachDefaultSystem( system: let pkgs = import nixpkgs { inherit system; };
             in {
                 packages = {
                     default = pkgs.stdenv.mkDerivation {

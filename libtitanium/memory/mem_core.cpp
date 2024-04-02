@@ -70,6 +70,7 @@ namespace memory
 
     void free( void* pMemoryToFree )
     {
+        // TODO: would be good to have a variant of this function that doesn't assert if we do this for defer purposes
         assert::Debug( pMemoryToFree );
 
 #if HAS_MEM_DEBUG

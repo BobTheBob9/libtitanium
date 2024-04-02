@@ -33,8 +33,11 @@ namespace renderer
         // get a handle to our physical gpu
         WGPUAdapter wgpuGraphicsDevice = o_renderDevice->internal.wgpuGraphicsDevice = [ wgpuInstance ]()
         {
+            // TODO: probably make this all user-configurable
+            // also TODO: don't get them from convars!!! need to figure out a proper interface for "most applications want these as convars, but some won't"
             const WGPURequestAdapterOptions wgpuRequestAdapterOptions = {
                 .powerPreference = WGPUPowerPreference_HighPerformance,
+                .backendType = WGPUBackendType_Undefined,
                 .forceFallbackAdapter = false
             };
 

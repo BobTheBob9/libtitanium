@@ -3,8 +3,10 @@
 #include <libtitanium/util/data/span.hpp>
 #include <libtitanium/util/maths.hpp>
 
-#include <SDL_gamecontroller.h>
-#include <SDL_events.h>
+#if TITANIUM_SDL
+    #include <SDL_events.h>
+    #include <SDL_gamecontroller.h>
+#endif // #if TITANIUM_SDL
 
 namespace input
 {
@@ -134,7 +136,6 @@ namespace input
     EKeyboardMouseButton EKeyboardMouseButton_FromString( const char *const pszButton );
     const char * EKeyboardMouseButton_ToString( const EKeyboardMouseButton eButton );
     bool EKeyboardMouseButton_IsMouseInput( const EKeyboardMouseButton eButton );
-    SDL_Scancode EKeyboardMouseButton_ToSDLKeyboardScancode( const EKeyboardMouseButton eButton );
 
     enum class EControllerAxis
     {
@@ -152,7 +153,6 @@ namespace input
 
     EControllerAxis EControllerAxisFromString( const char *const pszAxis );
     const char * EControllerAxisToString( const EControllerAxis eAxis );
-    SDL_GameControllerAxis EControllerAxisToSDLAxis( const EControllerAxis eControllerAxis );
 
     enum class EControllerButton
     {
@@ -179,8 +179,6 @@ namespace input
 
     EControllerButton EControllerButtonFromString( const char *const pszButton );
     const char * EControllerButtonAxisToString( const EControllerButton eButton );
-    SDL_GameControllerButton EControllerButtonToSDLButton( const EControllerButton eControllerButton );
-    uint EKeyboardMouseButton_ToSDLMouseButtonBitmask( const EKeyboardMouseButton eButton );
 
     enum class EInputDeviceType
     {
@@ -200,7 +198,10 @@ namespace input
         EInputDeviceType eDeviceType;
 
         union {
+#if TITANIUM_SDL
             SDL_GameController * pSDLGameController;
+#endif // #if TITANIUM_SDL
+
             KeyboardMouseData keyboardAndMouseData;
         };
     };
@@ -224,9 +225,17 @@ namespace input
         EControllerAxis eControllerAxis;
     };
 
-    void SetupSDL();
-    bool ProcessSDLInputEvent( const SDL_Event *const pSdlEvent, util::data::Span<InputDevice> sInputDevices );
     void ProcessAnalogueActions( util::data::Span<InputDevice> sMulticastInputDevices, const util::data::Span<AnalogueBinding> sInputBindings, util::data::Span<f32> o_snAnalogueActionState, const float flsecFrameTime );
     void ProcessDigitalActions( util::data::Span<InputDevice> sMulticastInputDevices, const util::data::Span<DigitalBinding> sInputBindings, util::data::Span<u8> o_snDigitalActionState );
     void PostProcess( util::data::Span<InputDevice> sInputDevices );
+
+#if TITANIUM_SDL
+    void SetupSDL();
+    bool ProcessSDLInputEvent( const SDL_Event *const pSdlEvent, util::data::Span<InputDevice> sInputDevices );
+
+    SDL_Scancode EKeyboardMouseButton_ToSDLKeyboardScancode( const EKeyboardMouseButton eButton );
+    SDL_GameControllerAxis EControllerAxisToSDLAxis( const EControllerAxis eControllerAxis );
+    SDL_GameControllerButton EControllerButtonToSDLButton( const EControllerButton eControllerButton );
+    uint EKeyboardMouseButton_ToSDLMouseButtonBitmask( const EKeyboardMouseButton eButton );
+#endif // #if TITANIUM_SDL
 }

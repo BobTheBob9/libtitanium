@@ -1,13 +1,9 @@
 #pragma once
 
-// TODO temp, ideally this should be in CMakeLists.txt, and probably used across the codebase (even game code!)
-#define TITANIUM_SDL 1
-
 #include <webgpu/webgpu.h>
 #if TITANIUM_SDL
 	#include <SDL.h>
 #endif // #if TITANIUM_SDL
-#include <imgui.h>
 
 #include <libtitanium/util/maths.hpp>
 #include <libtitanium/util/data/span.hpp>
@@ -43,6 +39,7 @@ namespace renderer
 		struct
 		{
 			WGPUSurface wgpuTargetSurface;
+			WGPUTextureFormat wgpuTargetSurfaceTextureFormat;
 
 			WGPUTexture wgpuDepthTexture;
 			WGPUTextureView wgpuDepthTextureView;
@@ -81,57 +78,82 @@ namespace renderer
 
 	};
 
+	// TODO: probably analyse whether GPUFunction stuff should handle both compute and draw, or whether these should be separate objects
+
+	// usage: struct SHADER_UNIFORM SomeStruct {};
+	// Intended for marshalling data from cpu => gpu, shouldn't be used outside of this for performance reasons
+	#define SHADER_UNIFORM alignas( 16 )
+
 	/*
 	 * 	A GPUFunction is a compiled function that tells the GPU how to draw an object
 	 * 	Each function takes a constant set of inputs and returns outputs, just like a normal function!
 	 * 		Currently, this is limited to just a combined vertex and fragment shader, compiled as one
 	 * 		In the future, things like compute shaders might be supported too!!
+	 *
+	 *
+	 * 	TODO: this is horribly wasteful currently, no way to recompile a single shader with different consts, share bindgroups across shaders, etc
 	 */
 	struct GPUFunction
 	{
+		struct CreationResult
+		{
+			bool success;
+
+			int column, row; // TODO: if compilation failed, then error info, line numbers, etc if available
+			char szMessage[ 2048 ]; // TODO: expensive!! maybe replace with pointer or handle to runtime allocated buffer when we have good temporary/local allocators
+		};
+
 		struct
 		{
-
+			WGPUBindGroupLayout wgpuFunctionUniformBindGroup; // defines uniform buffers need to be laid out for the function's caller
+			WGPUBindGroupLayout wgpuFunctionSamplerBindGroup;
+			WGPUBindGroupLayout wgpuFunctionTextureBindGroup;
+			WGPURenderPipeline wgpuRenderPipeline;
 		} internal;
 
-		static GPUFunction Create();
+		// TODO: kinda sucks this has to rely on the drawtarget for colour information, maybe there's a better way of doing this?
+		// also means we (theoretically) need a shader recompile if we ever recreate the drawtarget as it could change colour info, bleh
+		static CreationResult CreateFromSource_WGSL( Device *const pRenderDevice, DrawTarget *const pDrawTarget, GPUFunction *const o_func, util::data::Span<size_t> shaderArgSizes, uint numTextures, const char *const pszShaderSourceWGSL );
+
+		// TODO: could expand this with stuff like CreateFromSource_SPIRV, or even CreateFromSource_ASM for platforms where we want to ship precompiled shaders
+		// though, the latter would require a custom webgpu extension i believe, if we'd be sticking with webgpu on those platforms at all?
 	};
+
 
 	/*
-	 *	A RenderObject is a complete, renderable Thing, pulling together lots of resources and data.
-	 * 		A RenderObject is made of both references to resources (e.g. the object's model, textures, shader program to draw it with)
-	 * 		As well as data to tell it how to draw those resources (e.g. position, rotation, additional uniform vars, etc)
+	 * 	Arguments passed to the call of a GPUFunction
+	 * 		Currently, this is assuming meshes n stuff are required by every function call, perhaps a bad thing?
 	 */
-	struct RenderObject
+	struct GPUFunctionArgs
 	{
-		struct {
-			GPUFunction * pDrawFunction;
-			GPUModel * pModel;
-			GPUTexture * pTexture;
-		} resource;
+		// TODO: mostly adding for dev testing, possibly remove
+		enum class eMeshType
+		{
+			VERTEX,
+			VERTEX_INDEX
+		} meshType = eMeshType::VERTEX_INDEX;
 
-		util::maths::Vec3<f32> position;
-		util::maths::Vec3Angle<f32> rotation;
+		struct
+		{
+			// TODO: support multiple uniforms
+			WGPUBindGroup wgpuUniformBindGroup; WGPUBuffer wgpuUniformBuffer;
+			WGPUBindGroup wgpuTextureSamplerBindGroup; WGPUSampler wgpuTextureSampler;
+
+			WGPUBuffer wgpuVertexBuffer; // contains both vertices and indices, vertices at the start
+			size_t vertexBufSize; size_t vertexBufNumVertices; // TODO: adding vertexBufNumVertices for dev testing purposes
+
+			size_t indexBufOffset; // the offset into wgpuVertexBuffer where the indices begin
+			size_t indexBufSize; size_t indexBufNumIndices;
+		} internal;
 	};
 
-	/*
-	 * 	A renderer::View is the point of view from which a collection of RenderObjects are rendered
-	 * 		Essentially, it can be thought of as a camera, it's got a position, rotation and field of view
-	 */
-	struct View
+	struct DrawCommand
 	{
-		util::maths::Vec3<f32> position;
-		util::maths::Vec3Angle<f32> rotation;
-		f32 fov;
+		//util::data::MultiTree<DrawCommand> subCommands; // this needs fleshing out, but this is intended primarily to allow rendertextures n stuff: so a sub-command could render a scene to a screen, which is then rendered as part of the main scene
+
+		GPUFunction * gpuFunction; // shader function
+		util::data::Span<GPUFunctionArgs> callArgs; // arguments to each call of the function, the gpu func will be called once for each argument struct provided
 	};
 
-	/*
-	 * 	RenderSettings is a simple way of turning different parts of the rendering process on and off
-	 */
-	struct RenderSettings
-	{
-		bool bClearBackground = false;
-	};
-
-	void RenderViewAndObjectsToTarget( Device *const pDevice, View *const pView, util::data::Span<RenderObject> sRenderObjects, DrawTarget *const pDrawTarget, RenderSettings settings );
+	void RunDrawCommands( Device *const pDevice, DrawTarget *const pDrawTarget, const util::data::Span<DrawCommand> drawCommands );
 };
