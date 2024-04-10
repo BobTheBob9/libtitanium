@@ -120,8 +120,11 @@ target_include_directories( libtitanium_resource PUBLIC
 )
 target_sources( libtitanium_resource PRIVATE
     ${PROJECT_SOURCE_DIR}/libtitanium/resource/resource_resolve.cpp
+    ${PROJECT_SOURCE_DIR}/libtitanium/resource/resource_util.cpp
     ${PROJECT_SOURCE_DIR}/libtitanium/resource/readbuf.cpp
     ${PROJECT_SOURCE_DIR}/libtitanium/resource/readbuf_source_file.cpp
+
+    ${PROJECT_SOURCE_DIR}/libtitanium/resource/filetype/targa.cpp
 )
 
 #add_library( libtitanium_gui STATIC )

@@ -31,26 +31,25 @@ namespace resource
 
     GetReadBufResult GetReadBufForPath( ResourceLoader *const pResourceLoader, const util::data::Span<char> strPath );
 
-    enum eLoadFailureReason : byte
+    enum class eLoadFailureReason : byte
     {
+        NONE,
         // errors
         RESOURCE_NOT_FOUND,
         RESOURCE_FAILED_PARSE,
         RESOURCE_FAILED_CREATE_NATIVE_HANDLE
     };
 
+    const char *const eLoadFailureReason_ToString( const eLoadFailureReason eReason );
+
     template <typename T> struct Resource
     {
-        union
-        {
-            u64 resourceId;
-            eLoadFailureReason failureReason;
-        };
-
+        u64 resourceId;
+        eLoadFailureReason failureReason;
         T * data;
     };
 
-    template <typename T, bool ( *FNParseFile )( ReadBuf rawDataReadBuf, T *const o_readData ) = T::ParseResource> Resource<T> LoadFromPath_T( ResourceLoader *const pResourceLoader, util::data::Span<char> strPath )
+    template <typename T, bool ( *FNParseFile )( ReadBuf rawDataReadBuf, T *const o_readData ) = T::ParseResource, void ( *FNFreeFile )( T *const pFile ) = T::Cleanup> Resource<T> LoadFromPath_T( ResourceLoader *const pResourceLoader, util::data::Span<char> strPath )
     {
 #if RESOURCE_HAS_CACHING
         GetCachedParsedFile getCachedFile = GetCachedParsedFileForPath( strPath );
@@ -71,6 +70,8 @@ namespace resource
         bool parseResult = FNParseFile( getReadBuf.readBuf, r_buf );
         if ( !parseResult )
         {
+            FNFreeFile( r_buf );
+            memory::free( r_buf );
             return { .failureReason = eLoadFailureReason::RESOURCE_FAILED_PARSE, .data = nullptr };
         }
 
